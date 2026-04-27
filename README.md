@@ -6,7 +6,6 @@
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Material UI](https://img.shields.io/badge/Material_UI-9.0-007FFF?logo=mui&logoColor=white)](https://mui.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![I18n: ES/EN](https://img.shields.io/badge/I18n-ES%20%7C%20EN-blueviolet)](https://www.i18next.com/)
 
 ## 🚀 Características
