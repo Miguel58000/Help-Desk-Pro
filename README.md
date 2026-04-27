@@ -127,8 +127,3 @@ La aplicación detecta automáticamente la preferencia del navegador pero permit
 
 **Desarrollado por Miguel Rodríguez**  
 *HelpDesk Pro - Tu solución inteligente para la gestión de soporte técnico.*
-
-2. **Crea una rama** (`git checkout -b feature/nueva-funcionalidad`)
-3. **Commit cambios** (`git commit -m 'feat: agregar XYZ'`)
-4. **Push a la rama** (`git push origin feature/nueva-funcionalidad`)
-5. **Abre un Pull Request** describiendo los cambios
