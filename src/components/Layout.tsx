@@ -9,6 +9,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DomainAddIcon from '@mui/icons-material/DomainAdd';
 import ManageAgentsIcon from '@mui/icons-material/Group';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import TranslateIcon from '@mui/icons-material/Translate';
@@ -72,6 +73,7 @@ export default function Layout() {
     { label: t('nav.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
     { label: t('nav.newTicket'), icon: <AddIcon />, path: '/nuevo', primary: true },
     { label: t('nav.agents'), icon: <ManageAgentsIcon />, path: '/agentes' },
+    { label: t('nav.stock'), icon: <InventoryIcon />, path: '/stock' },
   ];
 
   return (

@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Paper, TextField, MenuItem, Button,
   Select, FormControl, InputLabel, Grid, Stepper, Step, StepLabel,
-  Divider, Alert, Chip, Avatar
+  Divider, Alert, Chip, Avatar, Checkbox, FormControlLabel
 } from '@mui/material';
 
-import { v4 as uuidv4 } from 'uuid';
 import { useTickets } from '../hooks/useTickets';
+import { useInventory } from '../hooks/useInventory';
 import { useOrg } from '../context/useOrg';
 import { useTranslation } from 'react-i18next';
-import type { Ticket, PrioridadTicket, Agente } from '../types/ticket';
+import type { Ticket, PrioridadTicket, Agente, Producto } from '../types/ticket';
 
 const AREAS_PREDEFINIDAS = ['Hardware', 'Software', 'Redes', 'Otro'];
 const SECTORES_PREDEFINIDOS = ['Ventas', 'Administración', 'Soporte', 'TI', 'Marketing', 'Otro'];
@@ -20,6 +20,7 @@ export default function CrearTicket() {
   const { t } = useTranslation();
   const { agregarTicket, tickets } = useTickets();
   const { agentes } = useOrg();
+  const { productos, disminuirStock } = useInventory();
 
   const agentesDisponibles = agentes.filter((a): a is Agente & { id: string } => !!a.id);
 
@@ -51,6 +52,10 @@ export default function CrearTicket() {
   const [agenteId, setAgenteId] = useState<string>('');
   const [solicitante, setSolicitante] = useState('');
 
+  const [usarMaterial, setUsarMaterial] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [cantidadUsada, setCantidadUsada] = useState(1);
+
   const [error, setError] = useState('');
 
   const getFinalArea = () => areaSelect === 'Otro' ? areaCustom.trim() : areaSelect;
@@ -62,6 +67,7 @@ export default function CrearTicket() {
     t('create.area') + ' / ' + t('create.sector'),
     t('create.priority'),
     t('agents.title'),
+    t('nav.stock'),
   ];
 
   const canProceed = () => {
@@ -78,6 +84,11 @@ export default function CrearTicket() {
       case 3:
         return true;
       case 4:
+        return true;
+      case 5:
+        if (usarMaterial) {
+          return productoSeleccionado !== null && cantidadUsada > 0 && cantidadUsada <= productoSeleccionado.cantidad;
+        }
         return true;
       default:
         return false;
@@ -110,33 +121,62 @@ export default function CrearTicket() {
     setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     const area = getFinalArea();
     const sector = getFinalSector();
 
+    // Validate stock availability
+    if (usarMaterial && productoSeleccionado) {
+      if (cantidadUsada > productoSeleccionado.cantidad) {
+        setError('Stock insuficiente para el producto seleccionado');
+        return;
+      }
+    }
+
     if (!titulo || !descripcion || !area || !sector) {
       setError(t('create.required'));
       return;
     }
 
-    const nuevoTicket: Omit<Ticket, 'organizacion'> = {
-      id: uuidv4(),
-      titulo,
-      descripcion,
-      area,
-      sector,
-      prioridad,
-      estado: 'Abierto',
-      fechaCreacion: Date.now(),
-      agenteId: agenteId || null,
-      solicitante: solicitante || undefined,
-    };
+      // Build ticket data, omitting undefined fields
+      const nuevoTicket: Omit<Ticket, 'organizacion' | 'id'> = {
+        titulo,
+        descripcion,
+        area,
+        sector,
+        prioridad,
+        estado: 'Abierto',
+        fechaCreacion: Date.now(),
+        agenteId: agenteId || null,
+      };
+     
+     if (solicitante.trim()) {
+       nuevoTicket.solicitante = solicitante;
+     }
+     
+     if (usarMaterial && productoSeleccionado) {
+       nuevoTicket.productosUsados = [{
+         productoId: productoSeleccionado.id,
+         cantidad: cantidadUsada,
+         productoNombre: productoSeleccionado.nombre,
+       }];
+     }
 
-    agregarTicket(nuevoTicket);
-    navigate('/');
+     try {
+       // Deduct stock if material was used
+       if (usarMaterial && productoSeleccionado) {
+         await disminuirStock(productoSeleccionado.id, cantidadUsada);
+       }
+
+       await agregarTicket(nuevoTicket);
+      navigate('/');
+    } catch (err) {
+      console.error('Error creating ticket:', err);
+      setError('Error al crear ticket');
+    }
   };
 
   const renderStepContent = () => {
@@ -153,9 +193,11 @@ export default function CrearTicket() {
               multiline
               rows={3}
               helperText={`${titulo.length}/50 ${t('create.maxChars')}`}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'background.paper',
+              slotProps={{
+                input: {
+                  sx: {
+                    bgcolor: 'background.paper',
+                  }
                 }
               }}
               autoFocus
@@ -182,9 +224,11 @@ export default function CrearTicket() {
               multiline
               rows={6}
               helperText={t('create.descriptionHelp')}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'background.paper',
+              slotProps={{
+                input: {
+                  sx: {
+                    bgcolor: 'background.paper',
+                  }
                 }
               }}
             />
@@ -218,7 +262,6 @@ export default function CrearTicket() {
                     value={areaCustom}
                     onChange={(e) => setAreaCustom(e.target.value)}
                     required
-                    helperText="Especifica el área personalizada"
                   />
                 ) : (
                   <Box sx={{
@@ -267,7 +310,6 @@ export default function CrearTicket() {
                     value={sectorCustom}
                     onChange={(e) => setSectorCustom(e.target.value)}
                     required
-                    helperText="Especifica el sector personalizado"
                   />
                 ) : (
                   <Box sx={{
@@ -291,68 +333,49 @@ export default function CrearTicket() {
                   </Box>
                 )}
               </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <Typography variant="body2" color="text.secondary">{t('create.caller')}</Typography>
-                <Typography variant="body1">{solicitante || '-'}</Typography>
-              </Grid>
             </Grid>
           </Box>
         );
-      case 3:
-        return (
-          <Box sx={{ py: 2 }}>
-            <FormControl fullWidth>
-              <InputLabel>{t('create.priority')}</InputLabel>
-              <Select
-                value={prioridad}
-                label={t('create.priority')}
-                onChange={(e) => setPrioridad(e.target.value as PrioridadTicket)}
-                sx={{ fontSize: '1.1rem' }}
-              >
-                <MenuItem value="Baja">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Chip
-                      label={t('priority.low')}
-                      color="success"
-                      size="small"
-                      sx={{ fontWeight: 'bold' }}
-                    />
-                    <span>{t('priority.low')} - {t('priority.lowDesc')}</span>
-                  </Box>
-                </MenuItem>
-                <MenuItem value="Media">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Chip
-                      label={t('priority.medium')}
-                      color="warning"
-                      size="small"
-                      sx={{ fontWeight: 'bold' }}
-                    />
-                    <span>{t('priority.medium')} - {t('priority.mediumDesc')}</span>
-                  </Box>
-                </MenuItem>
-                <MenuItem value="Alta">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Chip
-                      label={t('priority.high')}
-                      color="error"
-                      size="small"
-                      sx={{ fontWeight: 'bold' }}
-                    />
-                    <span>{t('priority.high')} - {t('priority.highDesc')}</span>
-                  </Box>
-                </MenuItem>
-              </Select>
-            </FormControl>
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                {prioridad === 'Baja' && t('priority.lowLongDesc')}
-                {prioridad === 'Media' && t('priority.mediumLongDesc')}
-                {prioridad === 'Alta' && t('priority.highLongDesc')}
-              </Typography>
-            </Box>
-          </Box>
-        );
+       case 3:
+         return (
+           <Box sx={{ py: 2 }}>
+             <FormControl fullWidth>
+               <InputLabel>{t('create.priority')}</InputLabel>
+               <Select
+                 value={prioridad}
+                 label={t('create.priority')}
+                 onChange={(e) => setPrioridad(e.target.value as PrioridadTicket)}
+                 sx={{ fontSize: '1.1rem' }}
+               >
+                 <MenuItem value="Baja">
+                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                     <Chip label={t('priority.low')} color="success" size="small" sx={{ fontWeight: 'bold' }} />
+                     <span>{t('priority.low')} - {t('priority.lowDesc')}</span>
+                   </Box>
+                 </MenuItem>
+                 <MenuItem value="Media">
+                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                     <Chip label={t('priority.medium')} color="warning" size="small" sx={{ fontWeight: 'bold' }} />
+                     <span>{t('priority.medium')} - {t('priority.mediumDesc')}</span>
+                   </Box>
+                 </MenuItem>
+                 <MenuItem value="Alta">
+                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                     <Chip label={t('priority.high')} color="error" size="small" sx={{ fontWeight: 'bold' }} />
+                     <span>{t('priority.high')} - {t('priority.highDesc')}</span>
+                   </Box>
+                 </MenuItem>
+               </Select>
+             </FormControl>
+             <Box sx={{ mt: 3 }}>
+               <Typography variant="body2" color="text.secondary">
+                 {prioridad === 'Baja' && t('priority.lowLongDesc')}
+                 {prioridad === 'Media' && t('priority.mediumLongDesc')}
+                 {prioridad === 'Alta' && t('priority.highLongDesc')}
+               </Typography>
+             </Box>
+           </Box>
+         );
       case 4:
         return (
           <Box sx={{ py: 2 }}>
@@ -388,6 +411,64 @@ export default function CrearTicket() {
               <Alert severity="info" sx={{ mt: 2 }}>
                 {t('agents.noAgents')}. {t('create.noAgentsInfo') || ''}
               </Alert>
+            )}
+          </Box>
+        );
+      case 5:
+        return (
+          <Box sx={{ py: 2 }}>
+            <FormControlLabel
+              control={<Checkbox checked={usarMaterial} onChange={(e) => setUsarMaterial(e.target.checked)} />}
+              label={t('stock.addMaterial') || 'Usar material / inventario'}
+            />
+            {usarMaterial && (
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('stock.select') || 'Seleccionar producto'}</InputLabel>
+                    <Select
+                      value={productoSeleccionado?.id || ''}
+                      label={t('stock.select') || 'Seleccionar producto'}
+                      onChange={(e) => {
+                        const prod = productos.find(p => p.id === e.target.value);
+                        setProductoSeleccionado(prod || null);
+                        setCantidadUsada(1);
+                      }}
+                    >
+                      {productos.map(p => (
+                        <MenuItem 
+                          key={p.id} 
+                          value={p.id}
+                          disabled={p.cantidad === 0}
+                        >
+                          {p.nombre} ({p.cantidad} disp.)
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Cantidad"
+                    value={cantidadUsada}
+                    onChange={(e) => setCantidadUsada(Math.max(1, Number(e.target.value)))}
+                  />
+                </Grid>
+                {productoSeleccionado && cantidadUsada > productoSeleccionado.cantidad && (
+                  <Grid size={{ xs: 12 }}>
+                    <Alert severity="error">{t('stock.insufficient') || 'Stock insuficiente'}</Alert>
+                  </Grid>
+                )}
+                {productoSeleccionado && (
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Se descontarán {cantidadUsada} unidades de {productoSeleccionado.nombre}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
             )}
           </Box>
         );

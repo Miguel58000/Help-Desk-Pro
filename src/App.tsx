@@ -7,6 +7,7 @@ import TicketsListPage from './pages/TicketsListPage';
 import CrearTicket from './pages/CrearTicket';
 import DetalleTicket from './pages/DetalleTicket';
 import Agentes from './pages/Agentes';
+import Stock from './pages/Stock';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path="nuevo" element={<CrearTicket />} />
         <Route path="ticket/:id" element={<DetalleTicket />} />
         <Route path="agentes" element={<Agentes />} />
+        <Route path="stock" element={<Stock />} />
       </Route>
     </Routes>
   );

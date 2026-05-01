@@ -1,44 +1,63 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Ticket } from '../types/ticket';
 import { useOrg } from '../context/useOrg';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useTranslation } from 'react-i18next';
-
-const STORAGE_KEY = 'helpdesk_tickets';
+import { db } from '../lib/firebase';
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  onSnapshot,
+  query,
+  where,
+  orderBy
+} from 'firebase/firestore';
 
 export function useTickets() {
   const { t, i18n } = useTranslation();
   const { organizacionActual } = useOrg();
-
-  const [allTickets, setAllTickets] = useState<Ticket[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [tickets, setTickets] = useState<Ticket[]>([]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allTickets));
-  }, [allTickets]);
+    if (!organizacionActual) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTickets([]);
+      return;
+    }
 
-  const tickets = useMemo(() => {
-    return allTickets.filter(
-      t => (t.organizacion || '') === organizacionActual
+    const q = query(
+      collection(db, 'tickets'),
+      where('organizacion', '==', organizacionActual),
+      orderBy('fechaCreacion', 'desc')
     );
-  }, [allTickets, organizacionActual]);
 
-  const agregarTicket = (ticket: Omit<Ticket, 'organizacion'>) => {
-    const nuevo = {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Ticket[];
+      setTickets(docs);
+    }, (error) => {
+      console.error('Error fetching tickets:', error);
+    });
+
+    return () => unsubscribe();
+  }, [organizacionActual]);
+
+  const agregarTicket = async (ticket: Omit<Ticket, 'organizacion' | 'id'>) => {
+    if (!organizacionActual) throw new Error('No organization selected');
+    await addDoc(collection(db, 'tickets'), {
       ...ticket,
       organizacion: organizacionActual,
-    } as Ticket;
-
-    setAllTickets(prev => [nuevo, ...prev]);
+    });
   };
 
-  const actualizarTicket = (id: string, updates: Partial<Ticket>) => {
-    setAllTickets(prev =>
-      prev.map(t => (t.id === id ? { ...t, ...updates } : t))
-    );
+  const actualizarTicket = async (id: string, updates: Partial<Ticket>) => {
+    const ticketRef = doc(db, 'tickets', id);
+    await updateDoc(ticketRef, updates);
   };
 
   const exportarCSV = useCallback((ticketsToExport: Ticket[] = tickets) => {
@@ -73,7 +92,7 @@ export function useTickets() {
     link.click();
 
     URL.revokeObjectURL(url);
-  }, [tickets]);
+  }, [tickets, t, i18n]);
 
   const exportarPDF = useCallback((ticketsToExport: Ticket[] = tickets) => {
     if (!ticketsToExport.length) return;
@@ -99,7 +118,7 @@ export function useTickets() {
     });
 
     doc.save('tickets-en-pdf.pdf');
-  }, [tickets]);
+  }, [tickets, t]);
 
   return {
     tickets,

@@ -4,10 +4,11 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   es: {
     translation: {
-      'nav.dashboard': 'Dashboard',
-      'nav.newTicket': 'Nuevo Ticket',
-      'nav.agents': 'Agentes',
-      'nav.logout': 'Cerrar Sesión',
+       'nav.dashboard': 'Dashboard',
+       'nav.newTicket': 'Nuevo Ticket',
+       'nav.agents': 'Agentes',
+       'nav.stock': 'Stock',
+       'nav.logout': 'Cerrar Sesión',
 
       'common.next': 'Siguiente',
       'common.back': 'Atrás',
@@ -119,9 +120,13 @@ const resources = {
       'agents.successDelete': 'Agente eliminado correctamente',
       'agents.errorName': 'El nombre es requerido',
       'agents.errorEmail': 'Ingrese un email válido',
-      'agents.addFirst': 'Agrega agentes para asignar tickets.',
+       'agents.addFirst': 'Agrega agentes para asignar tickets.',
 
-      'export.sectionTitle': 'Exportar',
+       'stock.addMaterial': 'Usar material / inventario',
+       'stock.select': 'Seleccionar producto',
+       'stock.insufficient': 'Stock insuficiente',
+
+       'export.sectionTitle': 'Exportar',
       'export.csv': 'Exportar a CSV',
       'export.pdf': 'Exportar a PDF',
       'export.allTickets': 'Todos los Tickets',
@@ -142,10 +147,11 @@ const resources = {
   },
   en: {
     translation: {
-      'nav.dashboard': 'Dashboard',
-      'nav.newTicket': 'New Ticket',
-      'nav.agents': 'Agents',
-      'nav.logout': 'Logout',
+       'nav.dashboard': 'Dashboard',
+       'nav.newTicket': 'New Ticket',
+       'nav.agents': 'Agents',
+       'nav.stock': 'Stock',
+       'nav.logout': 'Logout',
 
       'common.next': 'Next',
       'common.back': 'Back',
@@ -257,10 +263,13 @@ const resources = {
       'agents.successDelete': 'Agent deleted successfully',
       'agents.errorName': 'Name is required',
       'agents.errorEmail': 'Enter a valid email',
-      'agents.addFirst': 'Add agents to assign tickets.',
-      'agents.noAgentsInfo': 'Tickets will be assigned without an agent.',
+       'agents.addFirst': 'Add agents to assign tickets.',
 
-      'export.sectionTitle': 'Export',
+       'stock.addMaterial': 'Use material / inventory',
+       'stock.select': 'Select product',
+       'stock.insufficient': 'Insufficient stock',
+
+       'export.sectionTitle': 'Export',
       'export.csv': 'Export to CSV',
       'export.pdf': 'Export to PDF',
       'export.allTickets': 'All Tickets',

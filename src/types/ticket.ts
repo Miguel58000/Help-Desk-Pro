@@ -15,6 +15,7 @@ export interface Ticket {
   organizacion: string;
   agenteId?: string | null;
   solicitante?: string;
+  productosUsados?: UsoProducto[];
 }
 
 export interface Agente {
@@ -22,4 +23,22 @@ export interface Agente {
   nombre: string;
   email: string;
   organizacion: string;
+}
+
+export interface Producto {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  cantidad: number;
+  precioUnitario?: number;
+  categoria?: string;
+  organizacion: string;
+  fechaCreacion: number;
+  fechaActualizacion?: number;
+}
+
+export interface UsoProducto {
+  productoId: string;
+  cantidad: number;
+  productoNombre?: string;
 }
