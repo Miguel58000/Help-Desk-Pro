@@ -32,6 +32,7 @@
   - **CSV**: Generación de `tickets-en-csv.csv` con codificación UTF-8.
   - **PDF**: Reportes profesionales en `tickets-en-pdf.pdf` usando `jspdf-autotable`.
 - **Wizard de Creación**: Formulario multi-paso mejorado con preview
+- **Control de Stock**: Sistema completo de inventario con métricas en tiempo real (total productos, unidades, stock cero), alertas visuales y gestión de suministros corporativos.
 
 ### 🛠️ Funcionalidades Base
 - **Gestión de Tickets**: Crear, visualizar, editar y cerrar tickets de soporte
@@ -121,6 +122,14 @@ La aplicación detecta automáticamente la preferencia del navegador pero permit
 - Los nombres de los archivos están normalizados para facilitar su gestión:
   - **CSV**: Estructura plana ideal para Excel o Google Sheets.
   - **PDF**: Estructura visual con encabezados de columna automáticos.
+
+## 📜 Historial de Versiones
+
+| Versión | Descripción |
+|---------|-------------|
+| **v2.0** | Nueva UI con modo oscuro, Navbar cristal, animaciones, exportación PDF/CSV avanzada y **Control de Stock**. |
+| **v1.5** | Implementación de multi-tenancy y gestión de agentes por organización. |
+| **v1.0** | Lanzamiento inicial: Sistema base de tickets, prioridades y filtrado local. |
 
 ---
 
